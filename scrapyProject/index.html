@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}首页{% endblock %}
+
+{% block page_content %}
+    <table class="table table-bordered">
+    <tr id="c1">
+        <th>序列</th>
+        <th>应聘职位</th>
+        <th>工作要求</th>
+        <th>工作国家</th>
+    </tr>
+        {% for i in u %}
+            <tr>
+                <td>{{ i[0] }}</td>
+                <td>{{ i[1] }}</td>
+                <td>{{ i[2] }}</td>
+                <td>{{ i[3] }}</td>
+            </tr>
+    {% endfor %}
+    </table>
+    <a href="#c1"><div style="font-size: 20px;color: black">返回开头</div></a>
+{% endblock %}
