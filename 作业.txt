@@ -1,0 +1,210 @@
+1.通过weui组件的九宫格实现多种功能,每一个九宫格都代表了一种功能:
+updateMenuData: function () {
+    var appnames = this
+    // 去后台获取数据
+    wx.request({
+      url: app.globalData.appurl + app.globalData.appv + app.globalData.routeapp,
+      success: function (res) {
+        // 更新数据
+        console.log('成功')
+        console.log(res.data)
+        appnames.setData({ grids: res.data.publish})
+      },
+      fail: function (res) {
+        console.log(res.errMsg)
+
+      }
+    })
+  },
+  onNavigatorTap:function(e){
+    console.log(e)
+    var index = e.currentTarget.dataset.index
+    wx.showToast({
+      title: index+'',
+    })
+    var item = this.data.grids[index]
+    console.log(item)
+    wx.showToast({
+      title: item.app.name,
+    })
+    if (item.app.name=='微信'){
+      wx.navigateTo({
+        url: '/pages/wx/wx',
+      })
+    }else if(item.app.name=='支付宝'){
+        wx.navigateTo({
+          url: '/pages/zfb/zfb',
+        })
+    }else if (item.app.name=='精品段子'){
+      wx.navigateTo({
+        url: '/pages/dz/dz',
+      })
+    }
+  },
+2. 上传下载图片:
+Page({
+  data: {
+    // 待上传的图片, 本地地址
+    files: [],
+    //下载的文件列表
+    downloadedBackupedFiles: []
+
+  },
+  chooseImage: function (e) {
+    var that = this;
+    wx.chooseImage({
+      sizeType: ['original', 'compressed'], // 可以指定是原图还是压缩图，默认二者都有
+      sourceType: ['album', 'camera'], // 可以指定来源是相册还是相机，默认二者都有
+      success: function (res) {
+        // 返回选定照片的本地文件路径列表，tempFilePath可以作为img标签的src属性显示图片
+        that.setData({
+          files: that.data.files.concat(res.tempFilePaths)
+        });
+      }
+    })
+  },
+  previewImage: function (e) {
+    wx.previewImage({
+      current: e.currentTarget.id, // 当前显示图片的http链接
+      urls: this.data.files // 需要预览的图片http链接列表
+    })
+  },
+  // 上传图片文件
+  uploadpic: function () {
+    for (var i = 0; i < this.data.files.length; i++) {
+      var filePath = this.data.files[i]
+      wx.uploadFile({
+        url: 'http://127.0.0.1:8000/api/v2.0/image1/',
+        filePath: filePath,
+        name: 'test' + filePath,
+        success: function (res) {
+          console.log(res.data),
+            console.log(typeof (res.data))
+        },
+        fail:function(res){
+          console.log(res.errMsg)
+        }
+      })
+    }
+  },
+  // 下载图片
+  loadpic: function (imgItem) {
+    var that = this
+    wx.downloadFile({
+      url: 'http://127.0.0.1:8000/api/v2.0/image1/',
+      success: function (res) {
+        console.log('成功了..')
+        console.log(res.tempFilePath)
+        console.log(res.filePath)
+        var tmpPath = res.tempFilePath
+        var newDownloadedBackupedFiles = that.data.downloadedBackupedFiles
+        newDownloadedBackupedFiles.push(tmpPath)
+        that.setData({
+          downloadedBackupedFiles: newDownloadedBackupedFiles
+        })
+      }
+    })
+  },
+3.小程序接收和发送cookie:
+getCookie:function(){
+    wx.request({
+      url: 'http://127.0.0.1:8000/api/v2.0/CookeieTest/',
+      success:function(res){
+        var cookie = cookieUtil.getSessionIDFromResponse(res)
+        console.log(cookie)
+        cookieUtil.setCookieToStorage(cookie)
+        console.log('获取成功')
+      }
+    })
+  },
+  sendCookie:function(){
+    var newcookie = cookieUtil.getCookieFromStorage()
+    var header={}
+    header.Cookie=newcookie
+    wx.request({
+      url: 'http://127.0.0.1:8000/api/v2.0/CookeieTest2/',
+      header:header,
+      success:function(res){
+        console.log(res.data)
+        console.log('上传成功')
+      }
+    }) 
+  },
+
+from utils.responseutil import ResponseMixin
+class ImageText(View, ResponseMixin):
+    def get(self, request):
+        return JsonResponse(data=self.wrap_response({'url': 'xxxxx', 'des': '我很好','code':2002}))
+
+class CookeieTest(View):
+# 发送cookie
+    def get(self,request):
+        # print(dir(request))
+        request.session['mykey']='gyh98.521'
+        return JsonResponse({'key':'value'})
+
+class CookeieTest2(View):
+# 接受cookie
+    def get(self,request):
+        # request.session 这个是一个字典 可以用items()把内容遍历出来
+        # print(dir(request))
+        print(request.session['mykey'])
+        print(request.session.items())
+        return JsonResponse({'key2':'value2'})
+
+4.小程序端获取用户登录的信息,Django后台接收并存储后台数据库:
+authorize: function (){
+    var nickName=app.globalData.userInfo
+    console.log(nickName)
+    wx.login({
+      success: function(res){
+        wx.request({
+          url: 'http://127.0.0.1:8000/api/v2.0/authorize/',
+          method:'POST',
+          data:{
+            code:res.code,
+            nickName: app.globalData.userInfo.nickName
+          },
+          success:function(res){
+            wx.showToast({
+              title: '认证成功',
+            })
+            // 获取返回的session
+            var cookie = cookieUtil.getSessionIDFromResponse(res)
+            console.log(cookie)
+            cookieUtil.setCookieToStorage(cookie)
+          } 
+        })
+      },
+    })
+  },
+
+class authorize(View):
+    def get(self,request):
+        return self.post(request)
+    def post(self,request):
+        print(request.body) # b'{"code":"043cZlUH0WI9md2lUGTH0tBuUH0cZlUY"}'
+        bodystr = request.body.decode('utf-8')
+        bodydict =json.loads(bodystr)
+        code = bodydict.get('code')
+        nickName = bodydict.get('nickName')
+        print(code) # 043yhc890Mj44A1Ob0690Pvc890yhc8Y
+        print(nickName)
+        appid = secret_settings.appid
+        secret = secret_settings.secret
+        js_code = code
+        url ='https://api.weixin.qq.com/sns/jscode2session?appid={}&secret={}&js_code={}&grant_type=authorization_code'.format(appid,secret,js_code)
+        res = requests.get(url)
+        print(res.text)
+        res_dict =json.loads(res.text)
+        openid = res_dict.get('openid')
+        if not openid:
+            return HttpResponse('滚蛋')
+        request.session['openid']=openid
+        request.session['id_authorized']=True
+
+        # 保存用户信息
+        if not gyhUser.objects.filter(openid=openid):
+            newuser = gyhUser(openid=openid,nickname=nickName)
+            newuser.save()
+        return HttpResponse('authorize post OK')
