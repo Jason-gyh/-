@@ -1,0 +1,34 @@
+Django-admin  startproject  项目名   =创建项目
+
+Python manage.py runserver    =运行
+
+新应用创建运行过程:
+1  创建一个新的应用  Django-admin startapp 应用名
+2 写视图函数 views
+3 配置路由  urls
+4 配置settings   INSTALLED_APPS:里面写(应用名.apps.应用名config)
+5 runserver
+
+python manage.py makemigrations =整合数据
+Python manage.py migrate =数据导到数据库中
+
+python manage.py createsuperuser =创建超级用户
+
+python manage.py dumpdata 应用名>应用名.json=生成迁移数据库
+python manage.py dumpdata > 应用名.json =生成所有数据迁移数据库(和生成迁移数据库一样 只不过这个是全部的数据迁移)
+python manage.py migrate --run-syncdb --database slave =数据库模型迁移到MySQL
+python manage.py loaddata 应用名.json =数据导出到数据库(数据导出之前要自定义默认数据库)
+
+在models模型中定义添加db_index=True形成索引
+在models模型中添加Mrta类添加索引:
+class Meta:
+        db_table='表名' # 改变表名
+        indexes=[
+	models.Index(fields=['数组名','字段名']),
+                models.Index(fields=['数组名',]name='字段名'),   # 数组名做索引
+	]
+
+一对一  OneToOnefield 
+一对多  外键 写在多的一方 ForeignKey
+多对多  ManyToManyField
+ondelete 删除关系映射的所有 
